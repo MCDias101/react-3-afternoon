@@ -1,53 +1,73 @@
 import React, { Component } from 'react';
-import ProfileIcon from 'react-icons/lib/md/person-outline';
+import axios from 'axios';
 
-import './Compose.css';
+import './App.css';
 
-//////////////////////////////////////////////////////// THIS COMPONENT IS BEING RENDERED IN THE *APP* COMPONENT
+import Header from './Header/Header';
+import Compose from './Compose/Compose';
+import Post from './Post/Post';
 
-export default class Compose extends Component {
+class App extends Component {
   constructor() {
     super();
-    
+
     this.state = {
-      text: ''
+      posts: []
     };
 
+    this.updatePost = this.updatePost.bind( this );
+    this.deletePost = this.deletePost.bind( this );
     this.createPost = this.createPost.bind( this );
   }
-
-  updateText( text ) {
-    this.setState({ text });
+  
+  componentDidMount() {
+    axios.get('https://practiceapi.devmountain.com/api/posts').then( results => {
+      this.setState({ posts: results.data });
+    });
   }
 
-  createPost() {
+  updatePost( id, text ) {
+    axios.put(`https://practiceapi.devmountain.com/api/posts?id=${ id }`, { text }).then( results => {
+      this.setState({ posts: results.data });
+    });
+  }
 
+  deletePost( id ) {
+    axios.delete(`https://practiceapi.devmountain.com/api/posts?id=${ id }`).then( results => {
+      this.setState({ posts: results.data });
+    });
+  }
+
+  createPost( text ) {
+    axios.post('https://practiceapi.devmountain.com/api/posts', { text }).then( results => {
+      this.setState({ posts: results.data });
+    });
   }
 
   render() {
-    // Destructuring
-    const { text } = this.state;
+    const { posts } = this.state;
 
     return (
-      <section className="Compose__parent">
-        <div className="Compose__top">
+      <div className="App__parent">
+        <Header />
 
-          <div className="Compose__profile-picture">
-            <ProfileIcon />
-          </div>
+        <section className="App__content">
 
-          {/* This is where you type the message for your new post */}
-          <input className="Compose__input"
-                 placeholder="What's on your mind?"
-                 value={ text }
-                 onChange={ ( e ) => this.updateText( e.target.value ) } />
+          <Compose createPostFn={ this.createPost } />
+          
+          {
+            posts.map( post => (
+              <Post key={ post.id }
+                    id={ post.id }
+                    text={ post.text}
+                    date={ post.date }
+                    updatePostFn={ this.updatePost }
+                    deletePostFn={ this.deletePost } />
+            ))
+          }
 
-        </div>
-
-        <div className="Compose__bottom">
-          <button onClick={ this.createPost }>Compose</button>
-        </div>
-      </section>
-    )
+        </section>
+      </div>
+    );
   }
 }
